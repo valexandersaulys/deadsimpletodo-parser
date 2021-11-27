@@ -1,0 +1,26 @@
+{
+  "name": "deadsimpletodo-parser",
+  "version": "0.1.0",
+  "description": "Simple text-only parser for notes",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha --parallel tests/*js --bail",
+    "test:watch": "mocha --parallel tests/*js --watch",
+    "test:one": "mocha --parallel tests/adding-things.js --watch"
+  },
+  "keywords": [
+    "todo",
+    "parser",
+    "text"
+  ],
+  "author": "Vincent A Saulys",
+  "license": "MIT",
+  "devDependencies": {
+    "chai": "^4.3.4",
+    "mocha": "^9.1.3",
+    "sinon": "^12.0.1"
+  },
+  "dependencies": {
+    "moment": "^2.29.1"
+  }
+}
