@@ -21,8 +21,6 @@ a todo
 look another todo
 11am timing info
 - some notes for timing info
-  - some subnotes
-    - some sub-subnotes
 - more notes
 
 2021-11-26
@@ -31,8 +29,6 @@ look another todo
 #firsthashtag look its a hashtag
 11am timing info
 - some notes for timing info
-  - some subnotes
-    - some sub-subnotes
 - more notes
 
 2016-06-05

@@ -56,6 +56,47 @@ class Parser {
     return Object.keys(this._meta).length === 0;
   }
 
+  process(command, text) {
+    let args;
+    switch(command) {
+    case "insert":
+      return this.insert(text);
+    case "search":
+      return this.search(text);
+    case "find":
+      return this.find(text);
+    case "hashtags":
+      console.log("=", text);
+      if(!text)
+        args = [null, null];
+      else
+        args = text.split(" ").map(x => moment(x, this._dateFormat));
+      return this.getAllHashtags(...args);
+    case "hashtag-count":
+      if(!text)
+        args = [null, null];
+      else
+        args = text.split(" ").map(x => moment(x, this._dateFormat));
+      return this.getHashtagCount(...args);
+    case "display":
+      return this.display(text, true);
+    case "change-date":
+      args = text ? text.split(" ") : null;
+      return this.setDate(text);
+    case "first-date":
+      return this.getDateRange()[0].format(this._dateFormat);
+    case "last-date":
+      return this.getDateRange()[1].format(this._dateFormat);
+    case "edit":
+      if (!args)
+        throw new Error("Need text for command `edit`");
+      args = text.split(" "); // won't work, too many spaces...
+      return this.edit(...args);
+    default:
+      throw new Error("Invalid command thrown?", command, text);
+    };
+  }
+
   parse(text) {
     if (text === "" || !text)
       return "";
@@ -85,17 +126,17 @@ class Parser {
     // takes a date
     this._dayOf = moment(dayOf).format(this._dateFormat);
   }
-  insert(line, _date) {
+  insert(textLine, _date) {
     const dateToSearch = escape(_date ? _date : this._dayOf);
     if(!this._meta[dateToSearch]) 
       this._meta[dateToSearch] = dateToSearch;
     if(!this._dates.timeContains(moment(dateToSearch, this._dateFormat)))
       this._dates.push(moment(dateToSearch, this._dateFormat));
-    if(line)
-      this._meta[dateToSearch] += "\n" + line;
+    if(textLine)
+      this._meta[dateToSearch] += "\n" + textLine;
 
     // match any hashtags and add
-    const hashtagsPresent = line.match(HASHTAG_REGEXP);
+    const hashtagsPresent = textLine.match(HASHTAG_REGEXP);
     if (this._hashtags[dateToSearch])
       hashtagsPresent?.map(x => this._hashtags[dateToSearch].add(x));
     else
@@ -113,7 +154,6 @@ class Parser {
       return false;
     this._meta[dateToSearch] = this._meta[dateToSearch].replace(oldTextLine, "");
     this.insert(newTextLine, dateToSearch);
-    // return this._meta[dateToSearch];
     return true;
   }
   search(searchTerm, filterDate) {
@@ -208,6 +248,7 @@ class Parser {
     return text.split(/\n(?!-)/).sort((a,b) => getVal(b) - getVal(a)).join("\n");
   }
   getAllHashtags(dayOne, dayTwo) {
+    console.log("-", dayOne, dayTwo);
     return [
       ...this._getRangeOfBlocks(dayOne, dayTwo)
         .map(x => this._hashtags[x])
@@ -225,8 +266,14 @@ class Parser {
   getDateRange() {
     // if I can grab one specific date, do I want to walk through and look at every date in the file?
     if (this._dates.length < 2)
-      return [this._dates[0], this._dates[0]];
-    return [this._dates[0], this._dates[this._dates.length - 1]];
+      return [
+        this._dates[0],
+        this._dates[0]
+      ];
+    return [
+      this._dates[0],
+      this._dates[this._dates.length - 1]
+    ];
   }
   _getRangeOfBlocks(dayOne, dayTwo) {
     return (

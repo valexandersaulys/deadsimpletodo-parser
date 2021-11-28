@@ -64,8 +64,6 @@ update biosketch for Co-PI
 look another todo
 11am timing info
 - some notes for timing info
-  - some subnotes
-    - some sub-subnotes
 - more notes`
     );
 
@@ -102,8 +100,6 @@ update biosketch for Co-PI
 look another todo
 11am timing info
 - some notes for timing info
-  - some subnotes
-    - some sub-subnotes
 - more notes`
     );
 

@@ -39,10 +39,12 @@ read Sketchy draft`
 2021-11-25
 11am timing info
 - some notes for timing info
+- more notes
 
 2021-11-26
 11am timing info
-- some notes for timing info`
+- some notes for timing info
+- more notes`
     );    
   });
 });

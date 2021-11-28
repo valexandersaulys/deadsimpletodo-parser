@@ -12,7 +12,8 @@ describe("Adding Things", () => {
     const _date = new Date(2021, 10, 26);
     this.clock = sinon.useFakeTimers(_date.getTime());    
     this.parser = new Parser();
-    fs.unlinkSync("/tmp/scratch.txt");
+    if (fs.existsSync("/tmp/scratch.txt"))
+      fs.unlinkSync("/tmp/scratch.txt");
     this.parser.setFile("/tmp/scratch.txt");
   });
   afterEach(() => {});

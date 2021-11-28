@@ -4,9 +4,9 @@
   "description": "Simple text-only parser for notes",
   "main": "index.js",
   "scripts": {
-    "test": "mocha --parallel tests/*js --bail",
-    "test:watch": "mocha --parallel tests/*js --watch",
-    "test:one": "mocha --parallel tests/adding-things.js --watch"
+    "test": "mocha --parallel tests/*js",
+    "test:watch": "mocha --parallel tests/*js --watch --bail",
+    "test:one": "mocha --parallel tests/processing-commands.js --watch"
   },
   "keywords": [
     "todo",

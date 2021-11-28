@@ -28,7 +28,13 @@ describe("text file read tests", () => {
   
   it("will read in a file if given one", () => {
     const parser = new Parser();
+    assert.isEmpty(parser._meta);
+    assert.isEmpty(parser._dates);
+    assert.isEmpty(parser._hashtags);    
     parser.setFile("tests/sample-file.txt");
+    assert.isNotEmpty(parser._meta);
+    assert.isNotEmpty(parser._dates);
+    assert.isNotEmpty(parser._hashtags);    
   });
   
   it("will throw an exception if we try to read from the file with content already in", () => {
