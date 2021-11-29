@@ -107,7 +107,6 @@ describe("Adding Things", () => {
 - things
 #look some text`
     );
-
     assert.equal(
       JSON.stringify(this.parser.getDateRange().slice().sort()),
       JSON.stringify([
@@ -119,10 +118,6 @@ describe("Adding Things", () => {
       JSON.stringify(this.parser.getAllHashtags().slice().sort()),
       JSON.stringify(["#look"]),
     );
-
-    
-    // console.log("--", this.parser.saveFile(), typeof this.parser.saveFile());
-    // console.log(fs.readFileSync("/tmp/scratch.txt").toString());
     fs.unlinkSync("/tmp/scratch.txt");
     assert.equal(this.parser.filePath, "/tmp/scratch.txt");
     this.parser.saveFile();

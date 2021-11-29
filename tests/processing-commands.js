@@ -18,10 +18,14 @@ describe("Processing Commands", () => {
   afterEach(() => {});
 
   it("can process an `insert` command", () => {
-    this.parser.process("insert", "#abracadabra");
+    const lineInserted = this.parser.process("insert", "#abracadabra");
     assert.equal(
       JSON.stringify("2021-11-28\n#abracadabra"),
       JSON.stringify(this.parser._meta["2021-11-28"])
+    );
+    assert.equal(
+      "#abracadabra",
+      lineInserted
     );
   });
   it("can process a `/find` command", () => {
@@ -93,13 +97,58 @@ look, more notes!
       "2021-11-26"
     );
   });
-  
-  it("can process an `/edit` command", () => {
-    expect(() => this.parser.process("edit")).to.throw();
-    assert.isTrue(false);
-  });
 
   it("throws error if unknown command is passed", () => {
     expect(() => this.parser.process("asdfasdfa")).to.throw();
+  });
+});
+
+
+describe("can process /edit commands", () => {
+  beforeEach(() => {
+    const _date = new Date(2021, 10, 28);
+    this.clock = sinon.useFakeTimers(_date.getTime());    
+    this.parser = new Parser();
+    this.parser.setFile("tests/sample-file.txt");
+    this.parser.setDate("2021-11-28");
+  });
+  afterEach(() => {});
+
+  it("_", () => {
+    // ...
+    const someLines = this.parser.process("display", "2021-11-25");
+    assert.equal(
+      someLines,
+      `11am timing info
+- some notes for timing info
+- more notes
+a todo
+look another todo`
+    );
+    
+    const newLines = `11am timing info
+- some notes for timing info
+- more notes
+a todo
+look another todo`;
+
+    /*
+      Cache the reply and, if edit is called, look at the line changes. 
+      Then run edit(...) on those changed lines
+
+      However, it gets more complex if I changed the dates on something. 
+      
+      Best way to approach it?
+     */
+    
+    // will automatically use the cached item
+    /*
+    const newLine = this.parser.process("edit", newLines);
+    assert.equal(newLine, "egah");
+    assert.equal(
+      JSON.stringify("2021-11-28\negah"),
+      JSON.stringify(this.parser._meta["2021-11-28"])
+    );
+    */
   });
 });

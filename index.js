@@ -13,13 +13,13 @@ class Parser {
   _warning = true;
   _dayOf = null;   // string for the date
   _dateFormat = "YYYY-MM-DD";  // https://momentjs.com/
-  _hashtags = {};  // maps date to Set of hashtags
-  _dates = [];     // this will be sorted, has dates of type Moment<>
   _meta = {};      // holds all the text blocks
+  _dates = [];     // this will be sorted, has dates of type Moment<>
+  _hashtags = {};  // maps date to Set of hashtags  
   _sideEffects = {};  // hashtag to a function
   
   constructor(startingText) {
-    this.parse(startingText || "");
+    [this._meta, this._dates, this._hashtags] = this._parse(startingText || "");
     this._dayOf = moment(Date.now()).format(this._dateFormat);
   }
   setFile(filePath, reloadStats) {
@@ -28,7 +28,7 @@ class Parser {
     if (!fs.existsSync(filePath)) {
       fs.writeFileSync(filePath, "");
     }
-    this.parse(fs.readFileSync(filePath).toString());
+    [this._meta, this._dates, this._hashtags] = this._parse(fs.readFileSync(filePath).toString());
     this.filePath = filePath;
   }
   saveFile() {
@@ -37,7 +37,15 @@ class Parser {
       this._getText()
     );
   }
-  
+
+  async _diffArrays(oldArray, newArray) {
+    const func = (A, B) => A.filter(x => !B.includes(x)); // get elements in A not in B
+    return Promise.all([
+      func(oldArray, newArray),
+      func(newArray, oldArray),
+      (() => oldArray.filter(x => newArray.includes(x)))()
+    ]);
+  }
   _displayByDateObj(dayOf, formattedReturn) {
     const dateToSearch = dayOf ? moment(dayOf).format(this._dateFormat) : this._dayOf;
     let toRet = (
@@ -58,6 +66,15 @@ class Parser {
   _displayByStrings(year, month, day, formattedReturn) {
     return this._displayByDateObj(new Date(year, month, day), formattedReturn);
   }
+  async _diffTextBlocks(oldStr, newStr, _date) {
+    const splitKey = "\n"; 
+    const func = (A, B) => A.filter(x => !B.includes(x)); 
+    return Promise.all([
+      func(oldStr.split(splitKey), newStr.split(splitKey)),
+      func(newStr.split(splitKey), oldStr.split(splitKey)),      
+      (() => _date)()
+    ]);
+  }  
   _formatText(text) {
     /*
       Re-orders such that:
@@ -108,6 +125,28 @@ class Parser {
         .join("\n\n")
     );
   }
+  _parse(text) {
+    if (text === "" || !text)
+      return [{}, [], {}];
+    if (this.isValid(text)) {
+      // this could be refactored
+      let _dates = [], _meta = {}, _hashtags = {};
+      _dates = (
+        text
+          .split("\n\n")
+          .reduce((accumulator, currentBlock) => {
+            const blockDate = moment(currentBlock, this._dateFormat);
+            accumulator.push(blockDate);
+            _meta[escape(blockDate.format(this._dateFormat))] = currentBlock;
+            _hashtags[blockDate.format(this._dateFormat)] = new Set(currentBlock.match(HASHTAG_REGEXP));
+            return accumulator;
+          }, [])
+          .sort((a,b) => a - b) // sort ascending
+      );
+      return [_meta, _dates, _hashtags];
+    } else
+      throw new Error("Invalid text parsed");
+  }    
   add(...args) {
     return this.insert(...args);
   }
@@ -124,13 +163,21 @@ class Parser {
       return this._displayByStrings(...args);
     else
       return this._displayByDateObj(...args);
-  }  
+  }
+  delete(textLine, _date) {
+    return this.edit(textLine, "", _date);
+  }
   edit(oldTextLine, newTextLine, _date) {
-    const dateToSearch = _date ? _date : this._dayOf;
+    const dateToSearch = escape(_date ? _date : this._dayOf);
     if (!this._meta[dateToSearch]?.includes(oldTextLine)) 
       return false;
-    this._meta[dateToSearch] = this._meta[dateToSearch].replace(oldTextLine, "");
-    this.insert(newTextLine, dateToSearch);
+    if(newTextLine === "") {
+      // the last line won't be included if we append a "\n"
+      this._meta[dateToSearch] = (this._meta[dateToSearch] + "\n").replace(oldTextLine + "\n", "");
+    } else {
+      this._meta[dateToSearch] = (this._meta[dateToSearch] + "\n").replace(oldTextLine + "\n", "");
+      this.insert(newTextLine, dateToSearch);
+    }
     return true;
   }
   empty() {
@@ -167,7 +214,6 @@ class Parser {
     ];
   }  
   getAllHashtags(dayOne, dayTwo) {
-    console.log("-", dayOne, dayTwo);
     return [
       ...this._getRangeOfBlocks(dayOne, dayTwo)
         .map(x => this._hashtags[x])
@@ -181,13 +227,18 @@ class Parser {
   }
   getHashtagCount(dayOne, dayTwo) {
     return this.getAllHashtags(dayOne, dayTwo).length;
-  }  
+  }
   insert(textLine, _date) {
+    // does this asssume we have just one line? will it work with multiple lines?
     const dateToSearch = escape(_date ? _date : this._dayOf);
+
+    // if we don't have this, create it
     if(!this._meta[dateToSearch]) 
       this._meta[dateToSearch] = dateToSearch;
     if(!this._dates.timeContains(moment(dateToSearch, this._dateFormat)))
       this._dates.push(moment(dateToSearch, this._dateFormat));
+
+    // append a new line character
     if(textLine)
       this._meta[dateToSearch] += "\n" + textLine;
 
@@ -200,80 +251,94 @@ class Parser {
 
     // trigger any side effects
     hashtagsPresent?.map(hashtag => this._sideEffects[hashtag]?.map(func => func()));
+
+    return textLine;
   }  
   isValid(text) {
     if(Object.keys(this._meta).length > 0 && !this._warning)
       return true;
     return moment(text.split("\n")[0], this._dateFormat).isValid();
   }
-  parse(text) {
-    if (text === "" || !text)
-      return "";
-    if (this.isValid(text)) {
-      // walk through each date block, appending all hashtags and dates
-      this._dates = (
-        text
-          .split("\n\n")
-          .reduce((accumulator, currentBlock) => {
-            const blockDate = moment(currentBlock, this._dateFormat);
-            accumulator.push(blockDate);
-            this._meta[escape(blockDate.format(this._dateFormat))] = currentBlock;
-            this._hashtags[blockDate.format(this._dateFormat)] = new Set(currentBlock.match(HASHTAG_REGEXP));
-            return accumulator;
-          }, [])
-          .sort((a,b) => a - b) // sort ascending
-      );
-      // what if we hash everything to slots on another object?
-      // that would make iterating much faster... any memory increase?
-      // can I ditch this.text altogether?
-      return this._meta;
-    } else
-      throw new Error("Invalid text parsed");
-  }  
   process(command, text) {
-    let args;
+    let args, returnLines;
     switch(command) {
     case "insert":
-      return this.insert(text);
+      returnLines = this.insert(text);
+      break;
     case "search":
-      return this.search(text);
+      returnLines = this.search(text);
+      break;
     case "find":
-      return this.find(text);
+      returnLines = this.find(text);
+      break;
     case "hashtags":
-      console.log("=", text);
       if(!text)
         args = [null, null];
       else
         args = text.split(" ").map(x => moment(x, this._dateFormat));
-      return this.getAllHashtags(...args);
+      returnLines = this.getAllHashtags(...args);
+      break;
     case "hashtag-count":
       if(!text)
         args = [null, null];
       else
         args = text.split(" ").map(x => moment(x, this._dateFormat));
-      return this.getHashtagCount(...args);
+      returnLines = this.getHashtagCount(...args);
+      break;
     case "display":
-      return this.display(text, true);
+      returnLines = this.display(text, true);
+      break;
     case "change-date":
       args = text ? text.split(" ") : null;
-      return this.setDate(text);
+      returnLines = this.setDate(text);
+      break;
     case "first-date":
-      return this.getDateRange()[0].format(this._dateFormat);
+      returnLines = this.getDateRange()[0].format(this._dateFormat);
+      break;
     case "last-date":
-      return this.getDateRange()[1].format(this._dateFormat);
+      returnLines = this.getDateRange()[1].format(this._dateFormat);
+      break;
     case "edit":
-      if (!args)
+      if (!text)
         throw new Error("Need text for command `edit`");
-      /*
-        How would this order flow?
-        Load in the current line with '/edit' and then process?
-        Should be able to get the current line if there's one
-        */
-      args = text.split(" "); // won't work, too many spaces...
-      return this.edit(...args);
+      if (!this._toEdit)
+        throw new Error("Need to have run previous text to edit");
+      returnLines = this._processEdit(this._toEdit, text);
+      break;
     default:
       throw new Error("Invalid command thrown?", command, text);
     };
+    // this may need to be cached on the database?
+    this._toEdit = returnLines;
+    return returnLines;
+  }
+  async _processEdit(oldText, newText) {
+    const [oldMeta, _, oldHashtags] = this._parse(oldText);
+    const oldDates = Object.keys(oldMeta);
+    const [newMeta, __, newHashtags] = this._parse(newText);
+    const newDates = Object.keys(newMeta);
+    const [uniqueDatesOld, uniqueDatesNew, datesInCommon] = await this._diffArrays(
+      oldDates, newDates);
+    if(!uniqueDatesOld && !uniqueDatesNew) {
+      // all text in uniqueDatesOld is deleted, all text in uniqueDatesNew is added
+      // otherwise, we continue
+      return false;
+    }
+    if(datesInCommon) {
+      return Promise.all(
+        datesInCommon
+          .map(x => {
+            return this._diffTextBlocks(oldMeta[x], newMeta[x], x)
+               .then(thing => {
+                 const [linesToDelete, linesToInsert, _date] = thing;
+                 linesToDelete.map(line => this.delete(line, _date));
+                 linesToInsert.map(line => this.insert(line, _date));
+               });
+          })
+      );
+      // never reaches here?
+    }
+    return true;
   }
   search(searchTerm, filterDate) {
     if(!searchTerm) return false;
