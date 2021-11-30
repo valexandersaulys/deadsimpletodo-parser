@@ -169,3 +169,8 @@ Object.assign(User.prototype, sayHiMixin);
 // now User can say hi
 new User("Dude").sayHi(); // Hello Dude!
 ```
+
+
+# License
+
+MIT
