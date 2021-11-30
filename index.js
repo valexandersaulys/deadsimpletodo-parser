@@ -8,6 +8,11 @@ Array.prototype.timeContains = function(value) {
   return this.filter(x => x.isSame(value)).length > 0;
 };
 
+Array.prototype.sortAfter = function (func, start) {
+  this.splice(start, 0, ...this.splice(start, this.length - start + 1).sort(func));
+  return this;
+}
+
 class Parser {
   filePath = null;
   _warning = true;
@@ -52,9 +57,7 @@ class Parser {
       this._meta[dateToSearch]
       ?.split("\n")
       ?.reduce((accumulator, currentLine, i) => {
-        if (i == 0) // first line is the date
-          return accumulator;
-        accumulator += currentLine + "\n"; // won't be appending newlines
+        accumulator += currentLine + "\n"; 
         return accumulator;
       }, "")
     );
@@ -97,7 +100,7 @@ class Parser {
       return toRet;
     };
     // lookahead to not split subnotes
-    return text.split(/\n(?!-)/).sort((a,b) => getVal(b) - getVal(a)).join("\n");
+    return text.split(/\n(?!-)/).sortAfter((a,b) => getVal(b) - getVal(a), 1).join("\n");
   }
   _getRangeOfBlocks(dayOne, dayTwo) {
     return (
@@ -123,6 +126,7 @@ class Parser {
         .sort((a,b) => a-b)
         .map(x => this._meta[x.format(this._dateFormat)])
         .join("\n\n")
+        .trim()
     );
   }
   _parse(text) {
@@ -146,7 +150,7 @@ class Parser {
       return [_meta, _dates, _hashtags];
     } else
       throw new Error("Invalid text parsed");
-  }    
+  }
   add(...args) {
     return this.insert(...args);
   }
@@ -165,18 +169,21 @@ class Parser {
       return this._displayByDateObj(...args);
   }
   delete(textLine, _date) {
-    return this.edit(textLine, "", _date);
+    const deletedLine = this.edit(textLine, "", _date);
+    // remove from hashtags?
+    // remove from dates?
+    return deletedLine;
   }
   edit(oldTextLine, newTextLine, _date) {
-    const dateToSearch = escape(_date ? _date : this._dayOf);
+    const dateToSearch = _date ? _date : this._dayOf;
     if (!this._meta[dateToSearch]?.includes(oldTextLine)) 
       return false;
     if(newTextLine === "") {
       // the last line won't be included if we append a "\n"
-      this._meta[dateToSearch] = (this._meta[dateToSearch] + "\n").replace(oldTextLine + "\n", "");
+      this._meta[dateToSearch] = (this._meta[dateToSearch] + "\n").replace(oldTextLine + "\n", "").trim();
     } else {
-      this._meta[dateToSearch] = (this._meta[dateToSearch] + "\n").replace(oldTextLine + "\n", "");
-      this.insert(newTextLine, dateToSearch);
+      this._meta[dateToSearch] = (this._meta[dateToSearch] + "\n").replace(oldTextLine + "\n", "").trim();
+      this.insert(newTextLine, dateToSearch); 
     }
     return true;
   }
@@ -230,11 +237,11 @@ class Parser {
   }
   insert(textLine, _date) {
     // does this asssume we have just one line? will it work with multiple lines?
-    const dateToSearch = escape(_date ? _date : this._dayOf);
+    const dateToSearch = _date ? _date : this._dayOf;
 
     // if we don't have this, create it
     if(!this._meta[dateToSearch]) 
-      this._meta[dateToSearch] = dateToSearch;
+      this._meta[dateToSearch] = dateToSearch;  
     if(!this._dates.timeContains(moment(dateToSearch, this._dateFormat)))
       this._dates.push(moment(dateToSearch, this._dateFormat));
 
@@ -251,19 +258,20 @@ class Parser {
 
     // trigger any side effects
     hashtagsPresent?.map(hashtag => this._sideEffects[hashtag]?.map(func => func()));
-
-    return textLine;
+    
+    return this._meta[dateToSearch];
   }  
   isValid(text) {
     if(Object.keys(this._meta).length > 0 && !this._warning)
       return true;
     return moment(text.split("\n")[0], this._dateFormat).isValid();
   }
-  process(command, text) {
+  process(command, text, _toEdit) {
     let args, returnLines;
     switch(command) {
     case "insert":
-      returnLines = this.insert(text);
+      // returns the full text which needs to be sorted
+      returnLines = this._formatText(this.insert(text));
       break;
     case "search":
       returnLines = this.search(text);
@@ -283,7 +291,7 @@ class Parser {
         args = [null, null];
       else
         args = text.split(" ").map(x => moment(x, this._dateFormat));
-      returnLines = this.getHashtagCount(...args);
+      returnLines = String(this.getHashtagCount(...args));
       break;
     case "display":
       returnLines = this.display(text, true);
@@ -301,15 +309,13 @@ class Parser {
     case "edit":
       if (!text)
         throw new Error("Need text for command `edit`");
-      if (!this._toEdit)
+      if (!_toEdit)
         throw new Error("Need to have run previous text to edit");
-      returnLines = this._processEdit(this._toEdit, text);
+      returnLines = this._processEdit(_toEdit, text);
       break;
     default:
-      throw new Error("Invalid command thrown?", command, text);
+      throw new Error(`Invalid command thrown?\t${command}`);
     };
-    // this may need to be cached on the database?
-    this._toEdit = returnLines;
     return returnLines;
   }
   async _processEdit(oldText, newText) {
@@ -322,9 +328,9 @@ class Parser {
     if(!uniqueDatesOld && !uniqueDatesNew) {
       // all text in uniqueDatesOld is deleted, all text in uniqueDatesNew is added
       // otherwise, we continue
-      return false;
+      return [false, false];
     }
-    if(datesInCommon) {
+    if(datesInCommon.length > 0) {
       return Promise.all(
         datesInCommon
           .map(x => {
@@ -333,12 +339,15 @@ class Parser {
                  const [linesToDelete, linesToInsert, _date] = thing;
                  linesToDelete.map(line => this.delete(line, _date));
                  linesToInsert.map(line => this.insert(line, _date));
+                 return {
+                   linesDeleted: linesToDelete,
+                   linesInserted: linesToInsert,
+                   date: _date
+                 };
                });
           })
       );
-      // never reaches here?
     }
-    return true;
   }
   search(searchTerm, filterDate) {
     if(!searchTerm) return false;

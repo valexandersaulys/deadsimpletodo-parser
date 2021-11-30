@@ -24,9 +24,10 @@ describe("Processing Commands", () => {
       JSON.stringify(this.parser._meta["2021-11-28"])
     );
     assert.equal(
-      "#abracadabra",
+      `2021-11-28\n#abracadabra`,
       lineInserted
     );
+    // check that this inserts the hashtag too
   });
   it("can process a `/find` command", () => {
     const response = this.parser.process("search", "read Sketchy draft");
@@ -62,7 +63,8 @@ describe("Processing Commands", () => {
     // (date)
     assert.equal(
       this.parser.process("display", "2021-11-25"),
-      `11am timing info
+      `2021-11-25
+11am timing info
 - some notes for timing info
 - more notes
 a todo
@@ -74,7 +76,8 @@ look another todo`
     assert.equal(this.parser._dayOf, "2016-06-05");
     assert.equal(
       this.parser.process("display"),
-      `3:15pm join call with Umbrella Corp and industry partnership staff
+      `2016-06-05
+3:15pm join call with Umbrella Corp and industry partnership staff
 3:45pm advising meet with Oprah
 4pm Rihanna talk (368 CIT)
 5pm 1:1 with Beyonce #phdadvisee
@@ -114,41 +117,42 @@ describe("can process /edit commands", () => {
   });
   afterEach(() => {});
 
-  it("_", () => {
-    // ...
-    const someLines = this.parser.process("display", "2021-11-25");
+  it("_", async () => {
+    // display should return dates 
+    const oldLines = this.parser.process("display", "2021-11-25");
+    const oldContent = this.parser._meta["2021-11-25"];    
     assert.equal(
-      someLines,
-      `11am timing info
+      oldLines,
+      `2021-11-25
+11am timing info
 - some notes for timing info
 - more notes
 a todo
 look another todo`
     );
     
-    const newLines = `11am timing info
+    const newLines = `2021-11-25
+11:30am changed timing info
 - some notes for timing info
 - more notes
-a todo
-look another todo`;
+meet up with raytheon
+#war blow up the middle east`;
 
-    /*
-      Cache the reply and, if edit is called, look at the line changes. 
-      Then run edit(...) on those changed lines
+    // **NOTE** this works backwards from _processEdit
+    const worked = await this.parser.process("edit", newLines, oldLines);
+    // will submit the oldLines either through a cookie or hidden form element
 
-      However, it gets more complex if I changed the dates on something. 
-      
-      Best way to approach it?
-     */
-    
-    // will automatically use the cached item
-    /*
-    const newLine = this.parser.process("edit", newLines);
-    assert.equal(newLine, "egah");
-    assert.equal(
-      JSON.stringify("2021-11-28\negah"),
-      JSON.stringify(this.parser._meta["2021-11-28"])
-    );
-    */
+    const newContent = this.parser._meta["2021-11-25"];
+    assert.notEqual(oldContent, newContent, "Meta did not change did not change");
+    assert.include(newContent, "11:30am changed timing info");
+    assert.notInclude(newContent, "11am timing info");
+    assert.include(newContent, "meet up with raytheon");
+    assert.notInclude(newContent, "a todo");
+    assert.include(newContent, "#war blow up the middle east");
+    assert.notInclude(newContent, "#lookkk another todo");
+
+    // check hashtags
+    let hashtags = this.parser.process("hashtags");
+    assert.include(hashtags, "#war");    
   });
 });

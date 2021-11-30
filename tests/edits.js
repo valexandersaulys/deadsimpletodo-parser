@@ -165,7 +165,6 @@ look another todo
     );
     // console.log(await worked);
     // assert.isTrue(worked);
-    console.log("===", this.parser._meta["2021-11-25"]);
     assert.notInclude(this.parser._meta["2021-11-25"], "a todo\n");
     assert.include(this.parser._meta["2021-11-25"], "a todoooo");    
   });

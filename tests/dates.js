@@ -40,7 +40,8 @@ describe("Processing Dates", () => {
   it("will display the proper day's contents from file given date objects", () => {
     assert.equal(
       this.parser.display(new Date(2017, 10, 30)),
-        `11am meet with Head TAs
+        `2017-11-30
+11am meet with Head TAs
 - where are things at with inviting portfolio reviewers?
 11:30am meet with student Enya (interested in research)
 review and release A/B Testing assignment grading
@@ -60,7 +61,8 @@ update biosketch for Co-PI
 
     assert.equal(
       this.parser.display(new Date(2021, 10, 25)),
-      `a todo
+      `2021-11-25
+a todo
 look another todo
 11am timing info
 - some notes for timing info
@@ -76,7 +78,8 @@ look another todo
   it("will display the proper day's content from file given strings", () => {
     assert.equal(
       this.parser.display(2017, 10, 30),
-        `11am meet with Head TAs
+        `2017-11-30
+11am meet with Head TAs
 - where are things at with inviting portfolio reviewers?
 11:30am meet with student Enya (interested in research)
 review and release A/B Testing assignment grading
@@ -96,7 +99,8 @@ update biosketch for Co-PI
 
     assert.equal(
       this.parser.display(2021, 10, 25),
-      `a todo
+      `2021-11-25
+a todo
 look another todo
 11am timing info
 - some notes for timing info
@@ -112,7 +116,8 @@ look another todo
   it("will default to displaying current day if not passed any arguments", () => {
     assert.equal(
       this.parser.display(),
-        `11am meet with Head TAs
+        `2017-11-30
+11am meet with Head TAs
 - where are things at with inviting portfolio reviewers?
 11:30am meet with student Enya (interested in research)
 review and release A/B Testing assignment grading
@@ -135,7 +140,8 @@ update biosketch for Co-PI
     const content = this.parser.display(new Date(2016,5,5), true);
     assert.equal(
       content,
-        `3:15pm join call with Umbrella Corp and industry partnership staff
+        `2016-06-05
+3:15pm join call with Umbrella Corp and industry partnership staff
 3:45pm advising meet with Oprah
 4pm Rihanna talk (368 CIT)
 5pm 1:1 with Beyonce #phdadvisee
@@ -150,7 +156,8 @@ look, more notes!
     const content2 = this.parser.display(new Date(2016,5,6), true);
     assert.equal(
       content2,
-      `3:15pm join call with Umbrella Corp and industry partnership staff
+      `2016-06-06
+3:15pm join call with Umbrella Corp and industry partnership staff
 3:45pm advising meet with Oprah
 - #notes this is a subnote with a hashtag
 4pm Rihanna talk (368 CIT)

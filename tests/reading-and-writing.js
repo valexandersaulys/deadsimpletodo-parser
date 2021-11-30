@@ -20,10 +20,10 @@ describe("text file read tests", () => {
   
   it("will create a new file if none are found", () => {
     const parser = new Parser();
-    parser.setFile("/tmp/sample-file.txt");
+    parser.setFile("/tmp/egah.txt");
     assert.isTrue(parser.empty());
-    assert.isTrue(fs.existsSync("/tmp/sample-file.txt"));
-    assert.equal(fs.readFileSync("/tmp/sample-file.txt").toString(), "");
+    assert.isTrue(fs.existsSync("/tmp/egah.txt"));
+    assert.equal(fs.readFileSync("/tmp/egah.txt").toString(), "");
   });
   
   it("will read in a file if given one", () => {

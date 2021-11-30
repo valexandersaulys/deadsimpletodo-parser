@@ -40,14 +40,16 @@ describe("Adding Things", () => {
     );
     assert.equal(
       this.parser.display(null, false),
-      `#look some text
+      `2021-11-26
+#look some text
 3pm look a date todo
 4pm look a date todo with notes
 - things`
     );
     assert.equal(
       this.parser.display(null, true),
-      `3pm look a date todo
+      `2021-11-26
+3pm look a date todo
 4pm look a date todo with notes
 - things
 #look some text`
@@ -95,14 +97,16 @@ describe("Adding Things", () => {
 
     assert.equal(
       this.parser.display(null, false),
-      `#look some text
+      `2021-11-26
+#look some text
 3pm look a date todo
 4pm look a date todo with notes
 - things`
     );
     assert.equal(
       this.parser.display(null, true),
-      `3pm look a date todo
+      `2021-11-26
+3pm look a date todo
 4pm look a date todo with notes
 - things
 #look some text`
