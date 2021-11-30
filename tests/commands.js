@@ -12,7 +12,8 @@ describe("Processing Commands", () => {
     const _date = new Date(2021, 10, 28);
     this.clock = sinon.useFakeTimers(_date.getTime());    
     this.parser = new Parser();
-    this.parser.setFile("tests/sample-file.txt");
+    fs.copyFileSync("tests/sample-file.txt", "/tmp/temp-file-commands.txt");
+    this.parser.setFile("/tmp/temp-file-commands.txt");
     this.parser.setDate("2021-11-28");
   });
   afterEach(() => {});
@@ -20,39 +21,37 @@ describe("Processing Commands", () => {
   it("can process an `insert` command", () => {
     const lineInserted = this.parser.process("insert", "#abracadabra");
     assert.equal(
-      JSON.stringify("2021-11-28\n#abracadabra"),
-      JSON.stringify(this.parser._meta["2021-11-28"])
+      lineInserted,
+      "2021-11-28\n#abracadabra"
     );
-    assert.equal(
+    assert.include(
+      this.parser._read(),
       `2021-11-28\n#abracadabra`,
-      lineInserted
     );
     // check that this inserts the hashtag too
   });
   it("can process a `/find` command", () => {
-    const response = this.parser.process("search", "read Sketchy draft");
+    const lineInserted = this.parser.process("search", "read Sketchy draft");
     assert.equal(
-      JSON.stringify("2017-11-30\nread Sketchy draft"),
-      JSON.stringify(response)
+      lineInserted,
+      "2017-11-30\nread Sketchy draft",
     );
   });
   it("can process a `/hashtags` command", () => {
     let response = this.parser.process("hashtags");
-    assert.equal(
-      JSON.stringify(["#notes","#phdadvisee","#firsthashtag"]),
-      JSON.stringify(response)
+    assert.deepEqual(
+      response.sort(),
+      ["#firsthashtag","#notes","#phdadvisee"]
     );
-
     response = this.parser.process("hashtags", "2017-10-30");
-    assert.equal(
-      JSON.stringify(['#firsthashtag', '#phdadvisee'].slice().sort()),
-      JSON.stringify(response.slice().sort())
+    assert.deepEqual(
+      response.sort(),
+      ['#firsthashtag', '#phdadvisee']
     );
-
     response = this.parser.process("hashtags", "2016-05-07 2017-10-30");
-    assert.equal(
-      JSON.stringify(["#notes","#phdadvisee"]),
-      JSON.stringify(response)
+    assert.deepEqual(
+      response,
+      ["#notes","#phdadvisee"]
     );        
   });
   it("can process a `/hashtag-count` command", () => {
@@ -112,7 +111,8 @@ describe("can process /edit commands", () => {
     const _date = new Date(2021, 10, 28);
     this.clock = sinon.useFakeTimers(_date.getTime());    
     this.parser = new Parser();
-    this.parser.setFile("tests/sample-file.txt");
+    fs.copyFileSync("tests/sample-file.txt", "/tmp/temp-file.txt");
+    this.parser.setFile("/tmp/temp-file.txt");
     this.parser.setDate("2021-11-28");
   });
   afterEach(() => {});
@@ -120,7 +120,7 @@ describe("can process /edit commands", () => {
   it("_", async () => {
     // display should return dates 
     const oldLines = this.parser.process("display", "2021-11-25");
-    const oldContent = this.parser._meta["2021-11-25"];    
+    const oldContent = this.parser._findSpecificDate("2021-11-25");
     assert.equal(
       oldLines,
       `2021-11-25
@@ -142,7 +142,7 @@ meet up with raytheon
     const worked = await this.parser.process("edit", newLines, oldLines);
     // will submit the oldLines either through a cookie or hidden form element
 
-    const newContent = this.parser._meta["2021-11-25"];
+    const newContent = this.parser._findSpecificDate("2021-11-25");
     assert.notEqual(oldContent, newContent, "Meta did not change did not change");
     assert.include(newContent, "11:30am changed timing info");
     assert.notInclude(newContent, "11am timing info");

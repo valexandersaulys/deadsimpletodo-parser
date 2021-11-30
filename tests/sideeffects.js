@@ -12,7 +12,8 @@ describe("Process SideEffects for Hashtags", () => {
     const _date = new Date(2021, 10, 1);
     // this.clock = sinon.useFakeTimers(_date.getTime());    
     this.parser = new Parser();
-    this.parser.setFile("tests/sample-file.txt");
+    fs.copyFileSync("tests/sample-file.txt", "/tmp/temp-file-sideeffects.txt");
+    this.parser.setFile("/tmp/temp-file-sideeffects.txt");
   });
 
   it("will trigger a side effect when a hashtag is added", () => {

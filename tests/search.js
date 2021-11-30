@@ -12,7 +12,8 @@ describe("Adding Things", () => {
     const _date = new Date(2021, 10, 30);
     this.clock = sinon.useFakeTimers(_date.getTime());    
     this.parser = new Parser();
-    this.parser.setFile("tests/sample-file.txt");
+    fs.copyFileSync("tests/sample-file.txt", "/tmp/temp-file.txt");
+    this.parser.setFile("/tmp/temp-file.txt");
     this.parser.setDate(new Date(2017, 10, 30));
   });
 

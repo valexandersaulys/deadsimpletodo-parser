@@ -12,7 +12,8 @@ describe("Editing Things", () => {
     const _date = new Date(2021, 10, 30);
     this.clock = sinon.useFakeTimers(_date.getTime());    
     this.parser = new Parser();
-    this.parser.setFile("tests/sample-file.txt");
+    fs.copyFileSync("tests/sample-file.txt", "/tmp/temp-file-edits.txt");
+    this.parser.setFile("/tmp/temp-file-edits.txt");
     this.parser.setDate(new Date(2017, 10, 30));
   });
   afterEach(() => {
@@ -24,9 +25,9 @@ describe("Editing Things", () => {
       "review and release A/B Testing assignment grading",
       "look I changed a line"
     );
-    assert.isTrue(resp);    
-    assert.include(this.parser._getText(), "look I changed a line");
-    assert.notInclude(this.parser._getText(), "review and release A/B Testing assignment grading");
+    assert.isNotEmpty(resp);
+    assert.include(this.parser._read(), "look I changed a line");
+    assert.notInclude(this.parser._read(), "review and release A/B Testing assignment grading");
   });
 
   it("can edit a new hashtag in", () => {
@@ -34,12 +35,10 @@ describe("Editing Things", () => {
       "review and release A/B Testing assignment grading",
       "#wacky hashtag"
     );
-    assert.isTrue(resp);
-    assert.include(this.parser._getText(), "#wacky hashtag");
-    assert.notInclude(
-      this.parser._getText(),
-      "review and release A/B Testing assignment grading"
-    );
+    assert.isNotEmpty(resp);
+    const content = this.parser._read();
+    assert.include(content, "#wacky hashtag");
+    assert.notInclude(content, "review and release A/B Testing assignment grading");
     assert.include(this.parser.getAllHashtags(), "#wacky");
   });
   
@@ -49,9 +48,9 @@ describe("Editing Things", () => {
       "11:30am new time for meeting",
       "2017-11-30"
     );
-    assert.isTrue(resp);
-    assert.include(this.parser._getText(), "11:30am new time for meeting");
-    assert.notInclude(this.parser._getText(), "11am meet with Head TAs");
+    assert.isNotEmpty(resp);
+    assert.include(this.parser._read(), "11:30am new time for meeting");
+    assert.notInclude(this.parser._read(), "11am meet with Head TAs");
   });
 
   it("can edit lines in a longer text file via search", () => {
@@ -62,7 +61,7 @@ describe("Editing Things", () => {
       "#newhashtag in a new line",
       date
     );
-    assert.isTrue(resp);
+    assert.isNotEmpty(resp);
     const newHashtags = this.parser.getAllHashtags();
     assert.notEqual(oldHashtags, newHashtags);
     assert.include(newHashtags, "#newhashtag");
@@ -136,18 +135,18 @@ look another todo`,
 
   it("can delete things correctly", async () => {
     let zeLine = "update biosketch for Co-PI"; // include the slash?
-    assert.include(this.parser._getText(), zeLine); 
+    assert.include(this.parser._read(), zeLine); 
     this.parser.delete(zeLine, "2017-11-30");
-    assert.notInclude(this.parser._getText(), zeLine);
+    assert.notInclude(this.parser._read(), zeLine);
     // also can't search?
   });
 
   it("can process edit 1", async () => {
-    let content = this.parser._getText();
+    let content = this.parser._read();
     assert.notInclude(content, "a todoooo\n");
     assert.include(content, "a todo\n");
-    assert.notInclude(this.parser._meta["2021-11-25"], "a todoooo\n");
-    assert.include(this.parser._meta["2021-11-25"], "a todo");
+    assert.notInclude(this.parser._read(), "a todoooo\n");
+    assert.include(this.parser._read(), "a todo");
     
     const worked = await this.parser._processEdit(
       `2021-11-25
@@ -165,13 +164,13 @@ look another todo
     );
     // console.log(await worked);
     // assert.isTrue(worked);
-    assert.notInclude(this.parser._meta["2021-11-25"], "a todo\n");
-    assert.include(this.parser._meta["2021-11-25"], "a todoooo");    
+    assert.notInclude(this.parser._findSpecificDate("2021-11-25"), "a todo\n");
+    assert.include(this.parser._findSpecificDate("2021-11-25"), "a todoooo");
   });
 
   it("can process the complete edit correctly ", async () => {
     // async _processEdit(oldText, newText) ==>  where the edit goes off
-    let content = this.parser._getText();
+    let content = this.parser._read();
     assert.notInclude(content, "a todoooo");
     assert.notInclude(content, "look another todoooo");
     assert.notInclude(content, "- more notessss");
@@ -193,7 +192,7 @@ look another todoooo
 - some notes for timing info
 - morem notessss`
     );
-    content = this.parser._meta["2021-11-25"];
+    content = this.parser._findSpecificDate("2021-11-25");
     assert.include(content, "a todoooo");
     assert.include(content, "look another todoooo");
     assert.include(content, "- morem notessss");

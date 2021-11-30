@@ -12,7 +12,8 @@ describe("Process hashtags", () => {
     const _date = new Date(2021, 10, 1);
     // this.clock = sinon.useFakeTimers(_date.getTime());    
     this.parser = new Parser();
-    this.parser.setFile("tests/sample-file.txt");
+    fs.copyFileSync("tests/sample-file.txt", "/tmp/temp-file-hashtags.txt");
+    this.parser.setFile("/tmp/temp-file-hashtags.txt");
   });
   afterEach(() => {
     // this.clock.restore();
@@ -73,39 +74,25 @@ describe("Process hashtags", () => {
 
   // getAllHashtags(...)
   it("can get all available hashtags", () => {
-    assert.equal(Object.keys(this.parser._hashtags).length, 6);
-    assert.equal(
-      JSON.stringify(Object.keys(this.parser._hashtags)),
-      JSON.stringify([
-        '2017-11-30',
-        '2021-11-25',
-        '2021-11-26',
-        '2016-06-05',
-        '2016-06-06',
-        '2016-06-07'
-      ])
+    assert.deepEqual(
+      this.parser.getAllHashtags().sort(),
+      ['#notes', '#phdadvisee', '#firsthashtag'].sort(),
     );
-    
-    assert.equal(
-      JSON.stringify(this.parser.getAllHashtags().slice().sort()),
-      JSON.stringify(['#notes', '#phdadvisee', '#firsthashtag'].slice().sort()),
+    assert.deepEqual(
+      this.parser.getAllHashtags(null, null).sort(),
+      ['#notes', '#phdadvisee', '#firsthashtag'].sort(),
     );
-    assert.equal(
-      JSON.stringify(this.parser.getAllHashtags(null, null).slice().sort()),
-      JSON.stringify(['#phdadvisee', '#firsthashtag', '#notes'].slice().sort()),
+    assert.deepEqual(
+      this.parser.getAllHashtags(null, new Date(2017, 10, 30)).sort(),
+      ["#notes", '#phdadvisee'],
     );
-
-    assert.equal(
-      JSON.stringify(this.parser.getAllHashtags(null, new Date(2017, 10, 30)).slice().sort()),
-      JSON.stringify(['#phdadvisee', "#notes"].slice().sort()),
+    assert.deepEqual(
+      this.parser.getAllHashtags(new Date(2017, 10, 30), null).sort(),
+      ['#firsthashtag', '#phdadvisee'],
     );
-    assert.equal(
-      JSON.stringify(this.parser.getAllHashtags(new Date(2017, 10, 30), null).slice().sort()),
-      JSON.stringify(['#firsthashtag', '#phdadvisee'].slice().sort()),
-    );
-    assert.equal(
-      JSON.stringify(this.parser.getAllHashtags(new Date(2016,5,7), new Date(2017, 10, 30)).slice().sort()),
-      JSON.stringify(['#phdadvisee', "#notes"].slice().sort()),
+    assert.deepEqual(
+      this.parser.getAllHashtags(new Date(2016,5,7), new Date(2017, 10, 30)),
+      ['#phdadvisee', "#notes"],
     );    
   });
   

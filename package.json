@@ -6,7 +6,7 @@
   "scripts": {
     "test": "mocha --parallel tests/*js",
     "test:watch": "mocha --parallel tests/*js --watch --bail",
-    "test:one": "mocha --parallel tests/processing-commands.js --watch"
+    "test:one": "mocha --parallel tests/commands.js --watch --bail"
   },
   "keywords": [
     "todo",

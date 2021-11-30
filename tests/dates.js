@@ -12,7 +12,8 @@ describe("Processing Dates", () => {
     const _date = new Date(2017, 10, 30);
     this.clock = sinon.useFakeTimers(_date.getTime());    
     this.parser = new Parser();
-    this.parser.setFile("tests/sample-file.txt");
+    fs.copyFileSync("tests/sample-file.txt", "/tmp/temp-file.txt");
+    this.parser.setFile("/tmp/temp-file.txt");
   });
   afterEach(() => {
     this.clock.restore();
@@ -44,29 +45,29 @@ describe("Processing Dates", () => {
 11am meet with Head TAs
 - where are things at with inviting portfolio reviewers?
 11:30am meet with student Enya (interested in research)
-review and release A/B Testing assignment grading
 12pm HCI group meeting
 - vote for lab snacks
-send reminders for CHI external reviewers
-read Sketchy draft
-Zelda pick up eye tracker
-- have her sign for it
-update biosketch for Co-PI
 3:15pm join call with Umbrella Corp and industry partnership staff
 3:45pm advising meet with Oprah
 4pm Rihanna talk (368 CIT)
 5pm 1:1 with Beyonce #phdadvisee
-6pm faculty interview dinner with Madonna`
+6pm faculty interview dinner with Madonna
+review and release A/B Testing assignment grading
+send reminders for CHI external reviewers
+read Sketchy draft
+Zelda pick up eye tracker
+- have her sign for it
+update biosketch for Co-PI`
     );
 
     assert.equal(
       this.parser.display(new Date(2021, 10, 25)),
       `2021-11-25
-a todo
-look another todo
 11am timing info
 - some notes for timing info
-- more notes`
+- more notes
+a todo
+look another todo`
     );
 
     assert.equal(
@@ -82,29 +83,29 @@ look another todo
 11am meet with Head TAs
 - where are things at with inviting portfolio reviewers?
 11:30am meet with student Enya (interested in research)
-review and release A/B Testing assignment grading
 12pm HCI group meeting
 - vote for lab snacks
-send reminders for CHI external reviewers
-read Sketchy draft
-Zelda pick up eye tracker
-- have her sign for it
-update biosketch for Co-PI
 3:15pm join call with Umbrella Corp and industry partnership staff
 3:45pm advising meet with Oprah
 4pm Rihanna talk (368 CIT)
 5pm 1:1 with Beyonce #phdadvisee
-6pm faculty interview dinner with Madonna`
+6pm faculty interview dinner with Madonna
+review and release A/B Testing assignment grading
+send reminders for CHI external reviewers
+read Sketchy draft
+Zelda pick up eye tracker
+- have her sign for it
+update biosketch for Co-PI`
     );
 
     assert.equal(
       this.parser.display(2021, 10, 25),
       `2021-11-25
-a todo
-look another todo
 11am timing info
 - some notes for timing info
-- more notes`
+- more notes
+a todo
+look another todo`
     );
 
     assert.equal(
@@ -120,19 +121,19 @@ look another todo
 11am meet with Head TAs
 - where are things at with inviting portfolio reviewers?
 11:30am meet with student Enya (interested in research)
-review and release A/B Testing assignment grading
 12pm HCI group meeting
 - vote for lab snacks
-send reminders for CHI external reviewers
-read Sketchy draft
-Zelda pick up eye tracker
-- have her sign for it
-update biosketch for Co-PI
 3:15pm join call with Umbrella Corp and industry partnership staff
 3:45pm advising meet with Oprah
 4pm Rihanna talk (368 CIT)
 5pm 1:1 with Beyonce #phdadvisee
-6pm faculty interview dinner with Madonna`
+6pm faculty interview dinner with Madonna
+review and release A/B Testing assignment grading
+send reminders for CHI external reviewers
+read Sketchy draft
+Zelda pick up eye tracker
+- have her sign for it
+update biosketch for Co-PI`
     );    
   });
 
