@@ -21,11 +21,6 @@ class Parser {
   _dayOf = null;   // string for the date
   _dateFormat = "";  // https://momentjs.com/
   _sideEffects = {};  // hashtag to a function
-  /*
-    _meta = {};      // holds all the text blocks
-    _dates = [];     // this will be sorted, has dates of type Moment<>
-    _hashtags = {};  // maps date to Set of hashtags  
-  */
   
   constructor(filePath, dateFormat) {
     this._dateFormat = dateFormat || DEFAULT_DATE_FORMAT;
@@ -128,7 +123,33 @@ class Parser {
       func(newStr.split(splitKey), oldStr.split(splitKey)),      
       (() => _date)()
     ]);
-  }  
+  }
+  _formatJson(text) {
+    if(typeof text != "string")  return text;
+    text = text.trim();
+    const getVal = (x) => {
+      const asTime = moment(x.split(" ")[0], ['h:m a', 'H:m']);
+      const asHashtag = HASHTAG_REGEXP.test(x);
+      let toRet;
+      if (asTime.isValid()) {
+        toRet = "datetime";
+      } else if (asHashtag) {
+        toRet = "hashtag";
+      } else {
+        toRet = "todo";
+      };
+      return toRet;
+    };
+    // lookahead to not split subnotes
+    return text
+      .split(LINE_BREAK_REGEXP)
+      .map(line => ({line, categorized: getVal(line)}));
+  }
+  convertJsonBackToText(_json) {
+    return _json
+      .map(x => x.line)
+      .join("\n");
+  }
   _formatText(text) {
     /*
       Re-orders such that:
@@ -363,7 +384,7 @@ class Parser {
         args = [null, null];
       else
         args = text.split(" ").map(x => moment(x, this._dateFormat));
-      returnLines = String(this.getHashtagCount(...args));
+      returnLines = this.getHashtagCount(...args);
       break;
     case "display":
       returnLines = this.display(text, true);
@@ -383,12 +404,12 @@ class Parser {
         throw new Error("Need text for command `edit`");
       if (!_toEdit)
         throw new Error("Need to have run previous text to edit");
-      returnLines = this._processEdit(_toEdit, text);
+      returnLines = this._processEdit(this.convertJsonBackToText(_toEdit), text);
       break;
     default:
       throw new Error(`Invalid command thrown?\t${command}`);
     };
-    return returnLines;
+    return this._formatJson(returnLines);
   }
   async _processEdit(oldText, newText) {
     const [oldMeta, _, oldHashtags] = this._parse(oldText);

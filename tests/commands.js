@@ -20,21 +20,26 @@ describe("Processing Commands", () => {
 
   it("can process an `insert` command", () => {
     const lineInserted = this.parser.process("insert", "#abracadabra");
-    assert.equal(
+    assert.deepEqual(
       lineInserted,
-      "2021-11-28\n#abracadabra"
+      [
+        { line: '2021-11-28', categorized: 'datetime' },
+        { line: '#abracadabra', categorized: 'hashtag' }
+      ]
     );
     assert.include(
       this.parser._read(),
       `2021-11-28\n#abracadabra`,
     );
-    // check that this inserts the hashtag too
   });
   it("can process a `/find` command", () => {
     const lineInserted = this.parser.process("search", "read Sketchy draft");
-    assert.equal(
+    assert.deepEqual(
       lineInserted,
-      "2017-11-30\nread Sketchy draft",
+      [
+        { line: '2017-11-30', categorized: 'datetime' },
+        { line: 'read Sketchy draft', categorized: 'todo' }
+      ]
     );
   });
   it("can process a `/hashtags` command", () => {
@@ -59,44 +64,54 @@ describe("Processing Commands", () => {
     assert.equal(this.parser.process("hashtag-count", "2017-11-30"), 2);
   });  
   it("can process a `/display` command", () => {
-    // (date)
-    assert.equal(
+    assert.deepEqual(
       this.parser.process("display", "2021-11-25"),
-      `2021-11-25
-11am timing info
-- some notes for timing info
-- more notes
-a todo
-look another todo`
+      [
+        { line: '2021-11-25', categorized: 'datetime' },
+        {
+          line: '11am timing info\n- some notes for timing info\n- more notes',
+          categorized: 'datetime'
+        },
+        { line: 'a todo', categorized: 'todo' },
+        { line: 'look another todo', categorized: 'todo' }
+      ]
     );   
   });
   it("can process `/change-date` command", () => {
     this.parser.process("change-date", "2016-06-05");
     assert.equal(this.parser._dayOf, "2016-06-05");
-    assert.equal(
+    assert.deepEqual(
       this.parser.process("display"),
-      `2016-06-05
-3:15pm join call with Umbrella Corp and industry partnership staff
-3:45pm advising meet with Oprah
-4pm Rihanna talk (368 CIT)
-5pm 1:1 with Beyonce #phdadvisee
-6pm faculty interview dinner with Madonna
-some notes without anything attached
-look, more notes!
-#notes this has a hashtag
-#notes this has a hashtag2
-#notes this has a hashtag3`
+      [
+        { line: '2016-06-05', categorized: 'datetime' },
+        {
+          line: '3:15pm join call with Umbrella Corp and industry partnership staff',
+          categorized: 'datetime'
+        },
+        { line: '3:45pm advising meet with Oprah', categorized: 'datetime' },
+        { line: '4pm Rihanna talk (368 CIT)', categorized: 'datetime' },
+        { line: '5pm 1:1 with Beyonce #phdadvisee', categorized: 'datetime' },
+        {
+          line: '6pm faculty interview dinner with Madonna',
+          categorized: 'datetime'
+        },
+        { line: 'some notes without anything attached', categorized: 'todo' },
+        { line: 'look, more notes!', categorized: 'todo' },
+        { line: '#notes this has a hashtag', categorized: 'hashtag' },
+        { line: '#notes this has a hashtag2', categorized: 'todo' },
+        { line: '#notes this has a hashtag3', categorized: 'hashtag' }
+      ]
     );
   });
 
   it("can process a first and last date command", () => {
-    assert.equal(
+    assert.deepEqual(
       this.parser.process("first-date"),
-      "2016-06-05"
+      [ { line: "2016-06-05", categorized: "datetime" } ]
     );
-    assert.equal(
+    assert.deepEqual(
       this.parser.process("last-date"),
-      "2021-11-26"
+      [ { line: "2021-11-26", categorized: "datetime" } ]
     );
   });
 
@@ -111,8 +126,8 @@ describe("can process /edit commands", () => {
     const _date = new Date(2021, 10, 28);
     this.clock = sinon.useFakeTimers(_date.getTime());    
     this.parser = new Parser();
-    fs.copyFileSync("tests/sample-file.txt", "/tmp/temp-file.txt");
-    this.parser.setFile("/tmp/temp-file.txt");
+    fs.copyFileSync("tests/sample-file.txt", "/tmp/temp-file-commands.txt");
+    this.parser.setFile("/tmp/temp-file-commands.txt");
     this.parser.setDate("2021-11-28");
   });
   afterEach(() => {});
@@ -121,14 +136,17 @@ describe("can process /edit commands", () => {
     // display should return dates 
     const oldLines = this.parser.process("display", "2021-11-25");
     const oldContent = this.parser._findSpecificDate("2021-11-25");
-    assert.equal(
+    assert.deepEqual(
       oldLines,
-      `2021-11-25
-11am timing info
-- some notes for timing info
-- more notes
-a todo
-look another todo`
+      [
+        { line: '2021-11-25', categorized: 'datetime' },
+        {
+          line: '11am timing info\n- some notes for timing info\n- more notes',
+          categorized: 'datetime'
+        },
+        { line: 'a todo', categorized: 'todo' },
+        { line: 'look another todo', categorized: 'todo' }
+      ]
     );
     
     const newLines = `2021-11-25
